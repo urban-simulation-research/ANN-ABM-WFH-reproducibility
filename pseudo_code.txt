@@ -1,0 +1,35 @@
+FOR each simulation year (t = 2019 → 2032):
+
+    FOR each cell (x_i):
+
+        Compute p_wfh and p_wos using ANN models
+
+        Compute preference score S_pbw:
+            IF both ≥ 0.5 → S_pbw = 1 × (p_wfh + p_wos)
+            IF one ≥ 0.5 → S_pbw = 0.75 × (p_wfh + p_wos)
+            ELSE → S_pbw = 0.5 × (p_wfh + p_wos)
+
+        Compute structural adjustability:
+            P_isAdjustable = f_isAdjustable(x_i)
+
+        Compute LCS:
+            LCS = (1 - γ) × S_pbw + γ × P_isAdjustable
+
+    Rank cells by LCS
+
+    Select cells until annual quota is reached
+
+    FOR selected cells:
+
+        Predict LULC class using ANN (f_LULC)
+
+        IF predicted class ≠ current:
+            Assign new class (high-confidence)
+
+        ELSE:
+            IF LCS > 0.5:
+                Assign second most probable class
+            ELSE:
+                No change
+
+    Apply stochastic allocation (roulette wheel)
