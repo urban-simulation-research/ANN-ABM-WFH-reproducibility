@@ -1,7 +1,7 @@
 Key Simulation Parameters:
 
 γ (LCS weighting factor): 0.5
-Decision rule: highest probability class (no fixed τ threshold)
+Decision rule: highest-probability LULC class prediction (no fixed confidence threshold)
 LCS threshold: 0.5
 Annual growth quota: derived from 2011–2019 historical expansion rate
 
