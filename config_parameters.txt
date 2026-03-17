@@ -1,0 +1,21 @@
+Key Simulation Parameters:
+
+γ (LCS weighting factor): 0.5
+Decision rule: highest probability class (no fixed τ threshold)
+LCS threshold: 0.5
+Annual growth quota: derived from 2011–2019 historical expansion rate
+
+Scenario construction:
+- Baseline: ACS 2019 WFH (<10%)
+- Moderate: increased WFH probability
+- High: further increased WFH probability
+
+Agent types:
+- WFH agents
+- WOS agents
+
+Classifier inputs:
+- f_LULC
+- f_WFH
+- f_WOS
+- f_isAdjustable
