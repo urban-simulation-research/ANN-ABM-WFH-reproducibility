@@ -1,21 +1,51 @@
-Key Simulation Parameters:
+Hybrid ANN–ABM simulation: configuration parameters
 
-γ (LCS weighting factor): 0.5
-Decision rule: highest-probability LULC class prediction (no fixed confidence threshold)
-LCS threshold: 0.5
-Annual growth quota: derived from 2011–2019 historical expansion rate
+Spatial resolution
+- Grid cell size: 30 m × 30 m
 
-Scenario construction:
-- Baseline: ACS 2019 WFH (<10%)
-- Moderate: increased WFH probability
-- High: further increased WFH probability
+Temporal setup
+- Calibration/validation period: 2011–2019
+- Forward simulation period: 2019–2032
+- Time step: annual
 
-Agent types:
-- WFH agents
-- WOS agents
+Key decision parameters
+- gamma (LCS weight): 0.5
+- Agent-score screening threshold: 0.5
+- LCS transformation threshold: 0.5
+- High-confidence threshold tau: not separately defined
+- High-confidence decision rule: argmax predicted ANN class probability
 
-Classifier inputs:
-- f_LULC
-- f_WFH
-- f_WOS
-- f_isAdjustable
+Annual allocation rule
+- Annual growth quota: historical average annual urban expansion rate derived from observed 2011–2019 land-use change
+- Allocation sequence: eligible cells ranked by LCS until annual quota is reached
+- Final allocation mechanism: probabilistic roulette-wheel allocation
+
+Agent construction
+- WFH/WOS representation: probabilistic, cell-level
+- WFH empirical basis: ACS worked-at-home rates (2011, 2015, 2019)
+- Occupational feasibility basis: NAICS-based WFH feasibility scores
+- Additional adjustment: wage-weighted sector feasibility
+- Worker spatialization source: OnTheMap home-location data
+
+Classifiers
+- f_LULC: next-year LULC transition probabilities
+- f_WFH: WFH residential preference probability
+- f_WOS: WOS residential preference probability
+- f_isAdjustable: structural suitability for land-use transformation
+
+LCS formulation
+- LCS = (1 - gamma) * S_pbw + gamma * P_isAdjustable
+
+Preference-score rules
+- If p_wfh >= 0.5 and p_wos >= 0.5:
+  S_pbw = 1.0 * (p_wfh + p_wos)
+- If one of p_wfh or p_wos >= 0.5:
+  S_pbw = 0.75 * (p_wfh + p_wos)
+- If both p_wfh < 0.5 and p_wos < 0.5:
+  S_pbw = 0.5 * (p_wfh + p_wos)
+
+Eligibility rules
+- Cells in conservation areas: excluded
+- Cells outside permitted residential/zoning areas: excluded
+- Cells with both p_wfh and p_wos below 0.5: excluded from further evaluation
+- Cells with LCS > 0.5: considered viable for transformation
