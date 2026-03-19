@@ -10,14 +10,7 @@ The materials in this repository are intended to support review-stage transparen
   Step-by-step pseudo-code describing the simulation workflow, including data preprocessing, agent construction, ANN classification, LCS computation, annual allocation, and map updating.
 
 - `config_parameters.txt`  
-  Summary of the main simulation settings and decision parameters, including:
-  - grid resolution
-  - simulation periods
-  - gamma (`γ = 0.5`)
-  - operational 0.5 cutoffs
-  - annual quota rule
-  - high-confidence decision rule (no separate fixed `τ`)
-  - WFH/WOS agent construction
+  Summary of the main simulation settings and decision parameters, including grid resolution, simulation periods, gamma (`γ = 0.5`), operational 0.5 cutoffs, annual quota rule, the high-confidence decision rule, and WFH/WOS agent construction.
 
 ## Model overview
 The model integrates:
@@ -31,7 +24,7 @@ The model integrates:
 - CA-style neighborhood context through local LULC composition metrics
 
 ## Key modeling logic
-- WFH and WOS are represented probabilistically at the cell level
+- WFH and WOS are represented probabilistically at the cell level.
 - WFH probabilities are derived from:
   - ACS worked-at-home rates
   - OnTheMap worker home-location data
@@ -44,8 +37,7 @@ The model integrates:
   - `γ = 0.5`
   - agent-score screening threshold = `0.5`
   - LCS transformation threshold = `0.5`
-  - no separate fixed high-confidence threshold `τ` is used
-  - high-confidence predictions follow the class with the highest ANN probability
+- Rather than using a separate fixed high-confidence threshold `τ`, the model applies an argmax decision rule, in which each cell is assigned to the LULC class with the highest predicted ANN probability. If that predicted class differs from the current class, the transition is treated as a high-confidence prediction; otherwise, the model consults the LCS rule.
 
 ## Annual quota rule
 Newly developed cells are allocated annually according to a historical growth constraint. The annual quota is derived from the observed average annual urban expansion rate during 2011–2019. Eligible cells are ranked by LCS and selected until the quota is reached.
