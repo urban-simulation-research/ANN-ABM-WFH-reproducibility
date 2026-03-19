@@ -1,35 +1,97 @@
-FOR each simulation year (t = 2019 → 2032):
+Pseudo-code for the hybrid ANN–ABM urban expansion simulation
 
-    FOR each cell (x_i):
+Inputs:
+- NLCD LULC maps: 2011, 2015, 2019
+- ACS socioeconomic layers: 2011, 2015, 2019
+- OnTheMap worker home-location data
+- NAICS-based WFH feasibility scores (weighted by wages)
+- Zoning and conservation layers
+- Accessibility and environmental variables
+- CA-based neighborhood metrics
 
-        Compute p_wfh and p_wos using ANN models
+Key parameters:
+- gamma = 0.5
+- Agent-score screening threshold = 0.5
+- LCS transformation threshold = 0.5
+- High-confidence rule = argmax ANN class probability (no separate fixed tau)
+- Annual quota rule = historical average annual urban expansion rate derived from 2011–2019 observations
 
-        Compute preference score S_pbw:
-            IF both ≥ 0.5 → S_pbw = 1 × (p_wfh + p_wos)
-            IF one ≥ 0.5 → S_pbw = 0.75 × (p_wfh + p_wos)
-            ELSE → S_pbw = 0.5 × (p_wfh + p_wos)
+Step 1. Data preprocessing
+1.1 Harmonize all raster and vector datasets to a common 30 m × 30 m grid
+1.2 Reclassify LULC into simulation classes
+1.3 Compute spatial predictors (distance to roads, parks, CBD, schools, etc.)
+1.4 Generate CA-neighborhood metrics from surrounding LULC composition
+1.5 Rasterize zoning and conservation constraints
 
-        Compute structural adjustability:
-            P_isAdjustable = f_isAdjustable(x_i)
+Step 2. Construct WFH and WOS agent probability fields
+2.1 Disaggregate OnTheMap home-location points into worker cells
+2.2 Assign each worker cell a 2-digit NAICS sector code
+2.3 Link each NAICS sector to a WFH feasibility score
+2.4 Adjust sector-level WFH feasibility by wage information
+2.5 Map tract-level ACS worked-at-home rates to the same grid
+2.6 Combine ACS WFH rates + NAICS feasibility + worker home locations
+    to derive cell-level probabilities of WFH and WOS agents
 
-        Compute LCS:
-            LCS = (1 - γ) × S_pbw + γ × P_isAdjustable
+Step 3. Train ANN classifiers
+3.1 Train f_LULC to estimate next-year LULC transition probabilities
+3.2 Train f_WFH to estimate WFH residential preference probability
+3.3 Train f_WOS to estimate WOS residential preference probability
+3.4 Train f_isAdjustable to estimate structural suitability for transformation
 
-    Rank cells by LCS
+Step 4. Annual simulation loop
+For year = start_year to end_year:
+    For each eligible non-built-up cell:
+        4.1 Apply zoning/conservation constraints
+            If cell is not developable:
+                skip cell
 
-    Select cells until annual quota is reached
+        4.2 Compute WFH and WOS preference scores:
+            p_wfh = f_WFH(cell attributes)
+            p_wos = f_WOS(cell attributes)
 
-    FOR selected cells:
+        4.3 Agent-score screening:
+            If p_wfh < 0.5 and p_wos < 0.5:
+                skip cell
 
-        Predict LULC class using ANN (f_LULC)
+        4.4 Compute preference score S_pbw:
+            If p_wfh >= 0.5 and p_wos >= 0.5:
+                S_pbw = 1.0 * (p_wfh + p_wos)
+            Else if one of them >= 0.5:
+                S_pbw = 0.75 * (p_wfh + p_wos)
+            Else:
+                S_pbw = 0.5 * (p_wfh + p_wos)
 
-        IF predicted class ≠ current:
-            Assign new class (high-confidence)
+        4.5 Compute structural suitability:
+            P_isAdjustable = f_isAdjustable(cell attributes)
 
-        ELSE:
-            IF LCS > 0.5:
-                Assign second most probable class
-            ELSE:
-                No change
+        4.6 Compute LCS:
+            LCS = (1 - gamma) * S_pbw + gamma * P_isAdjustable
 
-    Apply stochastic allocation (roulette wheel)
+        4.7 Predict LULC transition:
+            probs = f_LULC(cell attributes)
+            predicted_class = argmax(probs)
+
+            If predicted_class != current_class:
+                mark as high-confidence candidate
+            Else:
+                If LCS > 0.5:
+                    predicted_class = second-highest valid class
+                Else:
+                    no transition
+
+    4.8 Rank all transition candidates by LCS
+
+    4.9 Apply annual quota rule:
+        Select cells sequentially until the number of allocated cells
+        reaches the historical average annual urban expansion quota
+        estimated from observed 2011–2019 urban growth
+
+    4.10 Allocate selected cells using probabilistic roulette-wheel selection
+
+    4.11 Update LULC map for next simulation year
+
+Outputs:
+- Annual simulated LULC maps
+- Final predicted LULC map
+- Spatial patterns of urban expansion
+- Comparative results for WFH/WOS-informed simulation
